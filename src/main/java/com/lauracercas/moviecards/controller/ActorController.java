@@ -50,19 +50,18 @@ public class ActorController {
     @PostMapping("saveActor")
     @SuppressWarnings("java:S4684") // Las entidades se usan como DTOs ya que no hay persistencia JPA real
     public String saveActor(@ModelAttribute Actor actor, BindingResult result, Model model) {
-        if (result.hasErrors()) {
-            return VIEW_ACTORS_FORM;
+        String view = VIEW_ACTORS_FORM;
+        if (!result.hasErrors()) {
+            Actor actorSaved = actorService.save(actor);
+            if (actor.getId() != null) {
+                model.addAttribute("message", Messages.UPDATED_ACTOR_SUCCESS);
+            } else {
+                model.addAttribute("message", Messages.SAVED_ACTOR_SUCCESS);
+            }
+            model.addAttribute(ATTRIBUTE_ACTOR, actorSaved);
+            model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
         }
-        Actor actorSaved = actorService.save(actor);
-        if (actor.getId() != null) {
-            model.addAttribute("message", Messages.UPDATED_ACTOR_SUCCESS);
-        } else {
-            model.addAttribute("message", Messages.SAVED_ACTOR_SUCCESS);
-        }
-
-        model.addAttribute(ATTRIBUTE_ACTOR, actorSaved);
-        model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
-        return VIEW_ACTORS_FORM;
+        return view;
     }
 
     @GetMapping("editActor/{actorId}")
