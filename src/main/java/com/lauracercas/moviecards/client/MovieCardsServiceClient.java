@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -23,6 +27,8 @@ import java.util.List;
 @Component
 public class MovieCardsServiceClient {
 
+    private static final Logger logger = LoggerFactory.getLogger(MovieCardsServiceClient.class);
+    
     private final RestTemplate restTemplate;
     private final MovieCardsServiceConfig config;
     private final Environment environment;
@@ -35,20 +41,31 @@ public class MovieCardsServiceClient {
 
     // Métodos para Movies
     public List<Movie> getAllMovies() {
+        String url = config.getServiceUrl() + "/movies";
+        logger.info("Intentando obtener películas desde: {}", url);
         try {
             ResponseEntity<List<Movie>> response = restTemplate.exchange(
-                    config.getServiceUrl() + "/movies",
+                    url,
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<List<Movie>>() {}
             );
+            logger.info("Respuesta recibida con status: {}", response.getStatusCode());
             return response.getBody() != null ? response.getBody() : new java.util.ArrayList<>();
-        } catch (RestClientException e) {
-            // En modo de prueba, retornar lista vacía en lugar de lanzar excepción
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            logger.error("Error HTTP al obtener películas. Status: {}, Response: {}, URL: {}", 
+                    e.getStatusCode(), e.getResponseBodyAsString(), url, e);
             if (isTestProfile()) {
                 return new java.util.ArrayList<>();
             }
-            throw new RuntimeException("Error al obtener las películas del servicio", e);
+            throw new RuntimeException("Error al obtener las películas del servicio. Status: " + 
+                    e.getStatusCode() + ", URL: " + url, e);
+        } catch (RestClientException e) {
+            logger.error("Error al conectar con el servicio. URL: {}", url, e);
+            if (isTestProfile()) {
+                return new java.util.ArrayList<>();
+            }
+            throw new RuntimeException("Error al conectar con el servicio moviecards-service. URL: " + url, e);
         }
     }
     
@@ -128,20 +145,31 @@ public class MovieCardsServiceClient {
 
     // Métodos para Actors
     public List<Actor> getAllActors() {
+        String url = config.getServiceUrl() + "/actors";
+        logger.info("Intentando obtener actores desde: {}", url);
         try {
             ResponseEntity<List<Actor>> response = restTemplate.exchange(
-                    config.getServiceUrl() + "/actors",
+                    url,
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<List<Actor>>() {}
             );
+            logger.info("Respuesta recibida con status: {}", response.getStatusCode());
             return response.getBody() != null ? response.getBody() : new java.util.ArrayList<>();
-        } catch (RestClientException e) {
-            // En modo de prueba, retornar lista vacía en lugar de lanzar excepción
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            logger.error("Error HTTP al obtener actores. Status: {}, Response: {}, URL: {}", 
+                    e.getStatusCode(), e.getResponseBodyAsString(), url, e);
             if (isTestProfile()) {
                 return new java.util.ArrayList<>();
             }
-            throw new RuntimeException("Error al obtener los actores del servicio", e);
+            throw new RuntimeException("Error al obtener los actores del servicio. Status: " + 
+                    e.getStatusCode() + ", URL: " + url, e);
+        } catch (RestClientException e) {
+            logger.error("Error al conectar con el servicio. URL: {}", url, e);
+            if (isTestProfile()) {
+                return new java.util.ArrayList<>();
+            }
+            throw new RuntimeException("Error al conectar con el servicio moviecards-service. URL: " + url, e);
         }
     }
 

@@ -14,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class MovieCardsServiceConfig {
 
-    @Value("${moviecards.service.url}")
+    @Value("${moviecards.service.url:${MOVIECARDS_SERVICE_URL:http://localhost:8080/api}}")
     private String serviceUrl;
 
     @Value("${moviecards.service.timeout:5000}")
