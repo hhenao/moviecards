@@ -7,15 +7,10 @@ import com.lauracercas.moviecards.model.Movie;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -28,222 +23,209 @@ import java.util.List;
 @Component
 public class MovieCardsServiceClient {
 
-    private static final Logger logger = LoggerFactory.getLogger(MovieCardsServiceClient.class);
-    
-    // Constantes para paths de la API
     private static final String API_PATH_MOVIES = "/movies";
     private static final String API_PATH_MOVIES_WITH_SLASH = "/movies/";
     private static final String API_PATH_ACTORS = "/actors";
     private static final String API_PATH_ACTORS_WITH_SLASH = "/actors/";
-    
+
     private final RestTemplate restTemplate;
     private final MovieCardsServiceConfig config;
     private final Environment environment;
 
-    public MovieCardsServiceClient(RestTemplate restTemplate, MovieCardsServiceConfig config, Environment environment) {
+    public MovieCardsServiceClient(RestTemplate restTemplate,
+                                   MovieCardsServiceConfig config,
+                                   Environment environment) {
         this.restTemplate = restTemplate;
         this.config = config;
         this.environment = environment;
     }
 
-    // Métodos para Movies
+    /* ==============================
+       MOVIES
+       ============================== */
+
     public List<Movie> getAllMovies() {
         String url = config.getServiceUrl() + API_PATH_MOVIES;
-        logger.info("Intentando obtener películas desde: {}", url);
-        try {
-            ResponseEntity<List<Movie>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<List<Movie>>() {}
-            );
-            logger.info("Respuesta recibida con status: {}", response.getStatusCode());
-            return response.getBody() != null ? response.getBody() : new java.util.ArrayList<>();
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            String errorMessage = String.format("Error HTTP al obtener películas del servicio. Status: %s, URL: %s", 
-                    e.getStatusCode(), url);
-            logger.error(errorMessage + ". Response: {}", e.getResponseBodyAsString(), e);
-            if (isTestProfile()) {
-                return new java.util.ArrayList<>();
-            }
-            throw new MovieCardsServiceException(errorMessage, url, e.getStatusCode().value(), 
-                    e.getResponseBodyAsString(), e);
-        } catch (RestClientException e) {
-            String errorMessage = String.format("Error al conectar con el servicio moviecards-service. URL: %s", url);
-            logger.error(errorMessage, e);
-            if (isTestProfile()) {
-                return new java.util.ArrayList<>();
-            }
-            throw new MovieCardsServiceException(errorMessage, url, e);
-        }
-    }
-    
-    private boolean isTestProfile() {
-        if (environment != null) {
-            String[] activeProfiles = environment.getActiveProfiles();
-            for (String profile : activeProfiles) {
-                if (profile.contains("test")) {
-                    return true;
-                }
-            }
-        }
-        // Fallback a propiedades del sistema
-        String activeProfile = System.getProperty("spring.profiles.active");
-        if (activeProfile == null) {
-            activeProfile = System.getenv("SPRING_PROFILES_ACTIVE");
-        }
-        return activeProfile != null && activeProfile.contains("test");
+        return executeGetList(url, new ParameterizedTypeReference<List<Movie>>() {});
     }
 
     public Movie getMovieById(Integer movieId) {
-        try {
-            ResponseEntity<Movie> response = restTemplate.getForEntity(
-                    config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId,
-                    Movie.class
-            );
-            return response.getBody();
-        } catch (RestClientException e) {
-            if (isTestProfile()) {
-                // Retornar una película mock para pruebas
-                Movie mockMovie = new Movie();
-                mockMovie.setId(movieId);
-                mockMovie.setTitle("Test Movie");
-                mockMovie.setActors(new java.util.ArrayList<>());
-                return mockMovie;
-            }
-            String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId;
-            throw new MovieCardsServiceException("Error al obtener la película con ID: " + movieId, url, e);
-        }
+        String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId;
+        return executeGetObject(url, Movie.class, () -> {
+            Movie mockMovie = new Movie();
+            mockMovie.setId(movieId);
+            mockMovie.setTitle("Test Movie");
+            mockMovie.setActors(List.of());
+            return mockMovie;
+        });
     }
 
     public Movie saveMovie(Movie movie) {
-        try {
-            ResponseEntity<Movie> response = restTemplate.postForEntity(
-                    config.getServiceUrl() + API_PATH_MOVIES,
-                    movie,
-                    Movie.class
-            );
-            return response.getBody() != null ? response.getBody() : movie;
-        } catch (RestClientException e) {
-            if (isTestProfile()) {
-                // En modo prueba, retornar la película con ID mock
-                if (movie.getId() == null) {
-                    movie.setId(1);
-                }
-                return movie;
+        String url = config.getServiceUrl() + API_PATH_MOVIES;
+        return executePost(url, movie, Movie.class, () -> {
+            if (movie.getId() == null) {
+                movie.setId(1);
             }
-            String url = config.getServiceUrl() + API_PATH_MOVIES;
-            throw new MovieCardsServiceException("Error al guardar la película", url, e);
-        }
+            return movie;
+        });
     }
 
     public Movie updateMovie(Integer movieId, Movie movie) {
+        String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId;
         try {
-            restTemplate.put(
-                    config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId,
-                    movie
-            );
+            restTemplate.put(url, movie);
             return getMovieById(movieId);
         } catch (RestClientException e) {
             if (isTestProfile()) {
-                // En modo prueba, retornar la película actualizada
                 movie.setId(movieId);
                 return movie;
             }
-            String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId;
-            throw new MovieCardsServiceException("Error al actualizar la película con ID: " + movieId, url, e);
+            throw new MovieCardsServiceException(
+                    "Error al actualizar la película con ID: " + movieId,
+                    url,
+                    e
+            );
         }
     }
 
-    // Métodos para Actors
+    /* ==============================
+       ACTORS
+       ============================== */
+
     public List<Actor> getAllActors() {
         String url = config.getServiceUrl() + API_PATH_ACTORS;
-        logger.info("Intentando obtener actores desde: {}", url);
-        try {
-            ResponseEntity<List<Actor>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<List<Actor>>() {}
-            );
-            logger.info("Respuesta recibida con status: {}", response.getStatusCode());
-            return response.getBody() != null ? response.getBody() : new java.util.ArrayList<>();
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            String errorMessage = String.format("Error HTTP al obtener actores del servicio. Status: %s, URL: %s", 
-                    e.getStatusCode(), url);
-            logger.error(errorMessage + ". Response: {}", e.getResponseBodyAsString(), e);
-            if (isTestProfile()) {
-                return new java.util.ArrayList<>();
-            }
-            throw new MovieCardsServiceException(errorMessage, url, e.getStatusCode().value(), 
-                    e.getResponseBodyAsString(), e);
-        } catch (RestClientException e) {
-            String errorMessage = String.format("Error al conectar con el servicio moviecards-service. URL: %s", url);
-            logger.error(errorMessage, e);
-            if (isTestProfile()) {
-                return new java.util.ArrayList<>();
-            }
-            throw new MovieCardsServiceException(errorMessage, url, e);
-        }
+        return executeGetList(url, new ParameterizedTypeReference<List<Actor>>() {});
     }
 
     public Actor getActorById(Integer actorId) {
-        try {
-            ResponseEntity<Actor> response = restTemplate.getForEntity(
-                    config.getServiceUrl() + API_PATH_ACTORS_WITH_SLASH + actorId,
-                    Actor.class
-            );
-            return response.getBody();
-        } catch (RestClientException e) {
-            if (isTestProfile()) {
-                // Retornar un actor mock para pruebas
-                Actor mockActor = new Actor();
-                mockActor.setId(actorId);
-                mockActor.setName("Test Actor");
-                return mockActor;
-            }
-            String url = config.getServiceUrl() + API_PATH_ACTORS_WITH_SLASH + actorId;
-            throw new MovieCardsServiceException("Error al obtener el actor con ID: " + actorId, url, e);
-        }
+        String url = config.getServiceUrl() + API_PATH_ACTORS_WITH_SLASH + actorId;
+        return executeGetObject(url, Actor.class, () -> {
+            Actor mockActor = new Actor();
+            mockActor.setId(actorId);
+            mockActor.setName("Test Actor");
+            return mockActor;
+        });
     }
 
     public Actor saveActor(Actor actor) {
+        String url = config.getServiceUrl() + API_PATH_ACTORS;
+        return executePost(url, actor, Actor.class, () -> {
+            if (actor.getId() == null) {
+                actor.setId(1);
+            }
+            return actor;
+        });
+    }
+
+    /* ==============================
+       RELACIÓN ACTOR - MOVIE
+       ============================== */
+
+    public String registerActorInMovie(Integer movieId, Integer actorId) {
+        String url = config.getServiceUrl()
+                + API_PATH_MOVIES_WITH_SLASH + movieId
+                + API_PATH_ACTORS_WITH_SLASH + actorId;
+
         try {
-            ResponseEntity<Actor> response = restTemplate.postForEntity(
-                    config.getServiceUrl() + API_PATH_ACTORS,
-                    actor,
-                    Actor.class
-            );
-            return response.getBody() != null ? response.getBody() : actor;
+            restTemplate.postForEntity(url, null, String.class);
+            return "Éxito";
         } catch (RestClientException e) {
             if (isTestProfile()) {
-                // En modo prueba, retornar el actor con ID mock
-                if (actor.getId() == null) {
-                    actor.setId(1);
-                }
-                return actor;
+                return "Éxito";
             }
-            String url = config.getServiceUrl() + API_PATH_ACTORS;
-            throw new MovieCardsServiceException("Error al guardar el actor", url, e);
+            throw new MovieCardsServiceException(
+                    "Error al registrar el actor en la película",
+                    url,
+                    e
+            );
         }
     }
 
-    // Métodos para Cards (relación Actor-Movie)
-    public String registerActorInMovie(Integer movieId, Integer actorId) {
+    /* ==============================
+       MÉTODOS PRIVADOS GENÉRICOS
+       ============================== */
+
+    private <T> List<T> executeGetList(String url,
+                                       ParameterizedTypeReference<List<T>> type) {
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId + API_PATH_ACTORS_WITH_SLASH + actorId,
-                    null,
-                    String.class
-            );
-            return response.getStatusCode() == HttpStatus.OK ? "Éxito" : "Error";
+            ResponseEntity<List<T>> response =
+                    restTemplate.exchange(url, HttpMethod.GET, null, type);
+
+            return response.getBody() != null ? response.getBody() : List.of();
+
         } catch (RestClientException e) {
+
             if (isTestProfile()) {
-                // En modo prueba, retornar éxito
-                return "Éxito";
+                return List.of();
             }
-            String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId + API_PATH_ACTORS_WITH_SLASH + actorId;
-            throw new MovieCardsServiceException("Error al registrar el actor en la película", url, e);
+
+            throw new MovieCardsServiceException(
+                    "Error al obtener datos desde: " + url,
+                    url,
+                    e
+            );
         }
+    }
+
+    private <T> T executeGetObject(String url,
+                                   Class<T> clazz,
+                                   SupplierWithException<T> testFallback) {
+        try {
+            ResponseEntity<T> response =
+                    restTemplate.getForEntity(url, clazz);
+
+            return response.getBody();
+
+        } catch (RestClientException e) {
+
+            if (isTestProfile()) {
+                return testFallback.get();
+            }
+
+            throw new MovieCardsServiceException(
+                    "Error al obtener recurso desde: " + url,
+                    url,
+                    e
+            );
+        }
+    }
+
+    private <T> T executePost(String url,
+                              Object request,
+                              Class<T> clazz,
+                              SupplierWithException<T> testFallback) {
+        try {
+            ResponseEntity<T> response =
+                    restTemplate.postForEntity(url, request, clazz);
+
+            return response.getBody();
+
+        } catch (RestClientException e) {
+
+            if (isTestProfile()) {
+                return testFallback.get();
+            }
+
+            throw new MovieCardsServiceException(
+                    "Error al enviar datos a: " + url,
+                    url,
+                    e
+            );
+        }
+    }
+
+    private boolean isTestProfile() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        for (String profile : activeProfiles) {
+            if (profile.contains("test")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @FunctionalInterface
+    private interface SupplierWithException<T> {
+        T get();
     }
 }
