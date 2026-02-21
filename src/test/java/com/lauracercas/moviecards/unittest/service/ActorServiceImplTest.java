@@ -1,7 +1,7 @@
 package com.lauracercas.moviecards.unittest.service;
 
+import com.lauracercas.moviecards.client.MovieCardsServiceClient;
 import com.lauracercas.moviecards.model.Actor;
-import com.lauracercas.moviecards.repositories.ActorJPA;
 import com.lauracercas.moviecards.service.actor.ActorServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
@@ -20,18 +21,19 @@ import static org.mockito.MockitoAnnotations.openMocks;
  * Autor: Laura Cercas Ramos
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 04/06/2024
+ * Modificado: 21/02/2026 - Adaptado para usar moviecards-service
  */
 class ActorServiceImplTest {
 
     @Mock
-    private ActorJPA actorJPA;
+    private MovieCardsServiceClient serviceClient;
     private ActorServiceImpl sut;
     private AutoCloseable closeable;
 
     @BeforeEach
     void setUp() {
         closeable = openMocks(this);
-        sut = new ActorServiceImpl(actorJPA);
+        sut = new ActorServiceImpl(serviceClient);
     }
 
     @AfterEach
@@ -45,7 +47,7 @@ class ActorServiceImplTest {
         actors.add(new Actor());
         actors.add(new Actor());
 
-        when(actorJPA.findAll()).thenReturn(actors);
+        when(serviceClient.getAllActors()).thenReturn(actors);
 
         List<Actor> result = sut.getAllActors();
 
@@ -58,7 +60,7 @@ class ActorServiceImplTest {
         actor.setId(1);
         actor.setName("Sample Actor");
 
-        when(actorJPA.getById(anyInt())).thenReturn(actor);
+        when(serviceClient.getActorById(anyInt())).thenReturn(actor);
 
         Actor result = sut.getActorById(1);
 
@@ -71,7 +73,7 @@ class ActorServiceImplTest {
         Actor actor = new Actor();
         actor.setName("New Actor");
 
-        when(actorJPA.save(actor)).thenReturn(actor);
+        when(serviceClient.saveActor(any(Actor.class))).thenReturn(actor);
 
         Actor result = sut.save(actor);
 

@@ -1,8 +1,8 @@
 package com.lauracercas.moviecards.service.actor;
 
 
+import com.lauracercas.moviecards.client.MovieCardsServiceClient;
 import com.lauracercas.moviecards.model.Actor;
-import com.lauracercas.moviecards.repositories.ActorJPA;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,28 +11,29 @@ import java.util.List;
  * Autor: Laura Cercas Ramos
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 04/06/2024
+ * Modificado: 21/02/2026 - Integración con moviecards-service
  */
 @Service
 public class ActorServiceImpl implements ActorService {
 
-    private final ActorJPA actorJPA;
+    private final MovieCardsServiceClient serviceClient;
 
-    public ActorServiceImpl(ActorJPA actorJPA) {
-        this.actorJPA = actorJPA;
+    public ActorServiceImpl(MovieCardsServiceClient serviceClient) {
+        this.serviceClient = serviceClient;
     }
 
     @Override
     public List<Actor> getAllActors() {
-        return actorJPA.findAll();
+        return serviceClient.getAllActors();
     }
 
     @Override
     public Actor save(Actor actor) {
-        return actorJPA.save(actor);
+        return serviceClient.saveActor(actor);
     }
 
     @Override
     public Actor getActorById(Integer actorId) {
-        return actorJPA.getById(actorId);
+        return serviceClient.getActorById(actorId);
     }
 }

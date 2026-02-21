@@ -1,5 +1,6 @@
 package com.lauracercas.moviecards.unittest.service;
 
+import com.lauracercas.moviecards.client.MovieCardsServiceClient;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Card;
 import com.lauracercas.moviecards.model.Movie;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -23,6 +25,7 @@ import static org.mockito.MockitoAnnotations.openMocks;
  * Autor: Laura Cercas Ramos
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 04/06/2024
+ * Modificado: 21/02/2026 - Adaptado para usar moviecards-service
  */
 class CardServiceImplTest {
 
@@ -30,6 +33,8 @@ class CardServiceImplTest {
     ActorService actorService;
     @Mock
     MovieService movieService;
+    @Mock
+    MovieCardsServiceClient serviceClient;
     private CardServiceImpl sut;
     private AutoCloseable closeable;
 
@@ -37,7 +42,7 @@ class CardServiceImplTest {
     @BeforeEach
     public void setUp() {
         closeable = openMocks(this);
-        sut = new CardServiceImpl(actorService, movieService);
+        sut = new CardServiceImpl(actorService, movieService, serviceClient);
     }
 
     @AfterEach
@@ -61,7 +66,7 @@ class CardServiceImplTest {
 
         when(actorService.getActorById(1)).thenReturn(actor);
         when(movieService.getMovieById(2)).thenReturn(movie);
-        when(movieService.save(movie)).thenReturn(movie);
+        when(serviceClient.registerActorInMovie(anyInt(), anyInt())).thenReturn("Éxito");
 
         String result = sut.registerActorInMovie(card);
 
@@ -104,6 +109,29 @@ class CardServiceImplTest {
 
         assertEquals(Messages.CARD_ALREADY_EXISTS, result);
 
+    }
+
+    @Test
+    public void shouldReturnErrorMessageWhenServiceFails() {
+        Card card = new Card();
+        card.setIdActor(1);
+        card.setIdMovie(2);
+
+        Actor actor = new Actor();
+        actor.setId(1);
+        actor.setName("Sample Actor");
+        Movie movie = new Movie();
+        movie.setId(2);
+        movie.setTitle("Sample Movie");
+        movie.setActors(new ArrayList<>());
+
+        when(actorService.getActorById(1)).thenReturn(actor);
+        when(movieService.getMovieById(2)).thenReturn(movie);
+        when(serviceClient.registerActorInMovie(anyInt(), anyInt())).thenThrow(new RuntimeException("Service error"));
+
+        String result = sut.registerActorInMovie(card);
+
+        assertEquals(Messages.ERROR_MESSAGE, result);
     }
 
 }

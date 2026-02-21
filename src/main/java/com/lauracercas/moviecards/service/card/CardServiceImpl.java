@@ -1,6 +1,7 @@
 package com.lauracercas.moviecards.service.card;
 
 
+import com.lauracercas.moviecards.client.MovieCardsServiceClient;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Card;
 import com.lauracercas.moviecards.model.Movie;
@@ -13,17 +14,19 @@ import org.springframework.stereotype.Service;
  * Autor: Laura Cercas Ramos
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 04/06/2024
+ * Modificado: 21/02/2026 - Integración con moviecards-service
  */
 @Service
 public class CardServiceImpl implements CardService {
 
     private final ActorService actorService;
-
     private final MovieService movieService;
+    private final MovieCardsServiceClient serviceClient;
 
-    public CardServiceImpl(ActorService actorService, MovieService movieService) {
+    public CardServiceImpl(ActorService actorService, MovieService movieService, MovieCardsServiceClient serviceClient) {
         this.actorService = actorService;
         this.movieService = movieService;
+        this.serviceClient = serviceClient;
     }
 
     @Override
@@ -42,9 +45,12 @@ public class CardServiceImpl implements CardService {
             return Messages.CARD_ALREADY_EXISTS;
         }
 
-        movie.addActor(actor);
-        movieService.save(movie);
-        return Messages.CARD_REGISTRATION_SUCCESS;
+        try {
+            serviceClient.registerActorInMovie(movieId, actorId);
+            return Messages.CARD_REGISTRATION_SUCCESS;
+        } catch (RuntimeException e) {
+            return Messages.ERROR_MESSAGE;
+        }
     }
 
 

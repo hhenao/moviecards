@@ -1,20 +1,18 @@
 package com.lauracercas.moviecards.integrationtest.repositories;
 
-import com.lauracercas.moviecards.model.Movie;
-import com.lauracercas.moviecards.repositories.MovieJPA;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Autor: Laura Cercas Ramos
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 04/06/2024
+ * Modificado: 21/02/2026 - Deshabilitado: Estas pruebas ya no aplican ya que ahora
+ * se usa el servicio externo moviecards-service en lugar de repositorios JPA locales.
+ * 
+ * NOTA: Estas pruebas deberían ser reemplazadas por pruebas de integración que
+ * prueben el cliente REST contra un servicio mock o un servicio de prueba.
+ * Para pruebas de integración del servicio REST, usar MockRestServiceServer
+ * o WireMock para simular el servicio externo.
  */
+/*
 @DataJpaTest
 public class MovieJPAIT {
 
@@ -53,3 +51,4 @@ public class MovieJPAIT {
         assertEquals(savedMovie, foundMovie.get());
     }
 }
+*/
