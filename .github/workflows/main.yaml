@@ -52,7 +52,7 @@ jobs:
         run: mvn spring-boot:run -Dspring-boot.run.profiles=test & sleep 60
 
       - name: Ejecutar las pruebas unitarias, de integración y end to end
-        run: mvn clean verify -Dspring.profiles.active=test
+        run: mvn verify -Dspring.profiles.active=test
 
   qa:
     needs: test

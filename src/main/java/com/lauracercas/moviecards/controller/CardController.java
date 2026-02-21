@@ -51,7 +51,7 @@ public class CardController {
         model.addAttribute("card", new Card());
     }
 
-    @PostMapping("register")
+    @PostMapping("/register")
     public String registerCard(@ModelAttribute Card card, Model model) {
         String result = cardService.registerActorInMovie(card);
 
