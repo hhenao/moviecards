@@ -49,10 +49,10 @@ jobs:
           sudo mv chromedriver /usr/local/bin/
 
       - name: Ejecutar la aplicación para pruebas end to end
-        run: mvn spring-boot:run & sleep 60
+        run: mvn spring-boot:run -Dspring-boot.run.profiles=test & sleep 60
 
       - name: Ejecutar las pruebas unitarias, de integración y end to end
-        run: mvn clean verify
+        run: mvn clean verify -Dspring.profiles.active=test
 
   qa:
     needs: test
