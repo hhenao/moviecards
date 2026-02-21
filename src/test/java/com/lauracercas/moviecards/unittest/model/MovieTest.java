@@ -1,6 +1,7 @@
 package com.lauracercas.moviecards.unittest.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,7 +93,7 @@ public class MovieTest {
         Actor actorExample = new Actor(2,"Sample name");
         actorsExample.add(actorExample);
         movie.setActors(actorsExample);
-        assert(movie.existActorInMovie(actorExample));
+        assertTrue(movie.existActorInMovie(actorExample));
     }
 
 }
