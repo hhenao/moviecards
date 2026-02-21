@@ -1,5 +1,6 @@
 package com.lauracercas.moviecards.client;
 
+import com.lauracercas.moviecards.client.exception.MovieCardsServiceException;
 import com.lauracercas.moviecards.config.MovieCardsServiceConfig;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Movie;
@@ -53,19 +54,21 @@ public class MovieCardsServiceClient {
             logger.info("Respuesta recibida con status: {}", response.getStatusCode());
             return response.getBody() != null ? response.getBody() : new java.util.ArrayList<>();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            logger.error("Error HTTP al obtener películas. Status: {}, Response: {}, URL: {}", 
-                    e.getStatusCode(), e.getResponseBodyAsString(), url, e);
+            String errorMessage = String.format("Error HTTP al obtener películas del servicio. Status: %s, URL: %s", 
+                    e.getStatusCode(), url);
+            logger.error(errorMessage + ". Response: {}", e.getResponseBodyAsString(), e);
             if (isTestProfile()) {
                 return new java.util.ArrayList<>();
             }
-            throw new RuntimeException("Error al obtener las películas del servicio. Status: " + 
-                    e.getStatusCode() + ", URL: " + url, e);
+            throw new MovieCardsServiceException(errorMessage, url, e.getStatusCode().value(), 
+                    e.getResponseBodyAsString(), e);
         } catch (RestClientException e) {
-            logger.error("Error al conectar con el servicio. URL: {}", url, e);
+            String errorMessage = String.format("Error al conectar con el servicio moviecards-service. URL: %s", url);
+            logger.error(errorMessage, e);
             if (isTestProfile()) {
                 return new java.util.ArrayList<>();
             }
-            throw new RuntimeException("Error al conectar con el servicio moviecards-service. URL: " + url, e);
+            throw new MovieCardsServiceException(errorMessage, url, e);
         }
     }
     
@@ -102,7 +105,8 @@ public class MovieCardsServiceClient {
                 mockMovie.setActors(new java.util.ArrayList<>());
                 return mockMovie;
             }
-            throw new RuntimeException("Error al obtener la película con ID: " + movieId, e);
+            String url = config.getServiceUrl() + "/movies/" + movieId;
+            throw new MovieCardsServiceException("Error al obtener la película con ID: " + movieId, url, e);
         }
     }
 
@@ -122,7 +126,8 @@ public class MovieCardsServiceClient {
                 }
                 return movie;
             }
-            throw new RuntimeException("Error al guardar la película", e);
+            String url = config.getServiceUrl() + "/movies";
+            throw new MovieCardsServiceException("Error al guardar la película", url, e);
         }
     }
 
@@ -139,7 +144,8 @@ public class MovieCardsServiceClient {
                 movie.setId(movieId);
                 return movie;
             }
-            throw new RuntimeException("Error al actualizar la película con ID: " + movieId, e);
+            String url = config.getServiceUrl() + "/movies/" + movieId;
+            throw new MovieCardsServiceException("Error al actualizar la película con ID: " + movieId, url, e);
         }
     }
 
@@ -157,19 +163,21 @@ public class MovieCardsServiceClient {
             logger.info("Respuesta recibida con status: {}", response.getStatusCode());
             return response.getBody() != null ? response.getBody() : new java.util.ArrayList<>();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            logger.error("Error HTTP al obtener actores. Status: {}, Response: {}, URL: {}", 
-                    e.getStatusCode(), e.getResponseBodyAsString(), url, e);
+            String errorMessage = String.format("Error HTTP al obtener actores del servicio. Status: %s, URL: %s", 
+                    e.getStatusCode(), url);
+            logger.error(errorMessage + ". Response: {}", e.getResponseBodyAsString(), e);
             if (isTestProfile()) {
                 return new java.util.ArrayList<>();
             }
-            throw new RuntimeException("Error al obtener los actores del servicio. Status: " + 
-                    e.getStatusCode() + ", URL: " + url, e);
+            throw new MovieCardsServiceException(errorMessage, url, e.getStatusCode().value(), 
+                    e.getResponseBodyAsString(), e);
         } catch (RestClientException e) {
-            logger.error("Error al conectar con el servicio. URL: {}", url, e);
+            String errorMessage = String.format("Error al conectar con el servicio moviecards-service. URL: %s", url);
+            logger.error(errorMessage, e);
             if (isTestProfile()) {
                 return new java.util.ArrayList<>();
             }
-            throw new RuntimeException("Error al conectar con el servicio moviecards-service. URL: " + url, e);
+            throw new MovieCardsServiceException(errorMessage, url, e);
         }
     }
 
@@ -188,7 +196,8 @@ public class MovieCardsServiceClient {
                 mockActor.setName("Test Actor");
                 return mockActor;
             }
-            throw new RuntimeException("Error al obtener el actor con ID: " + actorId, e);
+            String url = config.getServiceUrl() + "/actors/" + actorId;
+            throw new MovieCardsServiceException("Error al obtener el actor con ID: " + actorId, url, e);
         }
     }
 
@@ -208,7 +217,8 @@ public class MovieCardsServiceClient {
                 }
                 return actor;
             }
-            throw new RuntimeException("Error al guardar el actor", e);
+            String url = config.getServiceUrl() + "/actors";
+            throw new MovieCardsServiceException("Error al guardar el actor", url, e);
         }
     }
 
@@ -226,7 +236,8 @@ public class MovieCardsServiceClient {
                 // En modo prueba, retornar éxito
                 return "Éxito";
             }
-            throw new RuntimeException("Error al registrar el actor en la película", e);
+            String url = config.getServiceUrl() + "/movies/" + movieId + "/actors/" + actorId;
+            throw new MovieCardsServiceException("Error al registrar el actor en la película", url, e);
         }
     }
 }

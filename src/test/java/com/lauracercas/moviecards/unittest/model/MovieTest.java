@@ -84,7 +84,7 @@ public class MovieTest {
         movie.setActors(actorsExample);
         Actor actorExample = new Actor(1,"Sample name");
         movie.addActor(actorExample);
-        assert(movie.getActors().contains(actorExample));
+        assertTrue(movie.getActors().contains(actorExample));
     }
 
     @Test
