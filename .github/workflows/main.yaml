@@ -78,9 +78,32 @@ jobs:
             -Dsonar.projectKey=moviecards \
             -Dsonar.coverage.exclusions=**/model/**/*.java
 
-  deploy:
+  stage:
     runs-on: ubuntu-latest
     needs: qa
+    if: github.ref=='refs/heads/master'
+    environment:
+      name: 'Staging'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: moviecards-java
+
+      - name: Deploy to Azure Web App (pre-producción)
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'moviecards-henao-pre'
+          slot-name: 'Production'
+          package: '*.jar'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E76DC3E4214A4ED696F74F273C187D45 }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: stage
     if: github.ref=='refs/heads/master'
     environment:
       name: 'Production'
