@@ -30,6 +30,12 @@ public class MovieCardsServiceClient {
 
     private static final Logger logger = LoggerFactory.getLogger(MovieCardsServiceClient.class);
     
+    // Constantes para paths de la API
+    private static final String API_PATH_MOVIES = "/movies";
+    private static final String API_PATH_MOVIES_WITH_SLASH = "/movies/";
+    private static final String API_PATH_ACTORS = "/actors";
+    private static final String API_PATH_ACTORS_WITH_SLASH = "/actors/";
+    
     private final RestTemplate restTemplate;
     private final MovieCardsServiceConfig config;
     private final Environment environment;
@@ -42,7 +48,7 @@ public class MovieCardsServiceClient {
 
     // Métodos para Movies
     public List<Movie> getAllMovies() {
-        String url = config.getServiceUrl() + "/movies";
+        String url = config.getServiceUrl() + API_PATH_MOVIES;
         logger.info("Intentando obtener películas desde: {}", url);
         try {
             ResponseEntity<List<Movie>> response = restTemplate.exchange(
@@ -92,7 +98,7 @@ public class MovieCardsServiceClient {
     public Movie getMovieById(Integer movieId) {
         try {
             ResponseEntity<Movie> response = restTemplate.getForEntity(
-                    config.getServiceUrl() + "/movies/" + movieId,
+                    config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId,
                     Movie.class
             );
             return response.getBody();
@@ -105,7 +111,7 @@ public class MovieCardsServiceClient {
                 mockMovie.setActors(new java.util.ArrayList<>());
                 return mockMovie;
             }
-            String url = config.getServiceUrl() + "/movies/" + movieId;
+            String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId;
             throw new MovieCardsServiceException("Error al obtener la película con ID: " + movieId, url, e);
         }
     }
@@ -113,7 +119,7 @@ public class MovieCardsServiceClient {
     public Movie saveMovie(Movie movie) {
         try {
             ResponseEntity<Movie> response = restTemplate.postForEntity(
-                    config.getServiceUrl() + "/movies",
+                    config.getServiceUrl() + API_PATH_MOVIES,
                     movie,
                     Movie.class
             );
@@ -126,7 +132,7 @@ public class MovieCardsServiceClient {
                 }
                 return movie;
             }
-            String url = config.getServiceUrl() + "/movies";
+            String url = config.getServiceUrl() + API_PATH_MOVIES;
             throw new MovieCardsServiceException("Error al guardar la película", url, e);
         }
     }
@@ -134,7 +140,7 @@ public class MovieCardsServiceClient {
     public Movie updateMovie(Integer movieId, Movie movie) {
         try {
             restTemplate.put(
-                    config.getServiceUrl() + "/movies/" + movieId,
+                    config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId,
                     movie
             );
             return getMovieById(movieId);
@@ -144,14 +150,14 @@ public class MovieCardsServiceClient {
                 movie.setId(movieId);
                 return movie;
             }
-            String url = config.getServiceUrl() + "/movies/" + movieId;
+            String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId;
             throw new MovieCardsServiceException("Error al actualizar la película con ID: " + movieId, url, e);
         }
     }
 
     // Métodos para Actors
     public List<Actor> getAllActors() {
-        String url = config.getServiceUrl() + "/actors";
+        String url = config.getServiceUrl() + API_PATH_ACTORS;
         logger.info("Intentando obtener actores desde: {}", url);
         try {
             ResponseEntity<List<Actor>> response = restTemplate.exchange(
@@ -184,7 +190,7 @@ public class MovieCardsServiceClient {
     public Actor getActorById(Integer actorId) {
         try {
             ResponseEntity<Actor> response = restTemplate.getForEntity(
-                    config.getServiceUrl() + "/actors/" + actorId,
+                    config.getServiceUrl() + API_PATH_ACTORS_WITH_SLASH + actorId,
                     Actor.class
             );
             return response.getBody();
@@ -196,7 +202,7 @@ public class MovieCardsServiceClient {
                 mockActor.setName("Test Actor");
                 return mockActor;
             }
-            String url = config.getServiceUrl() + "/actors/" + actorId;
+            String url = config.getServiceUrl() + API_PATH_ACTORS_WITH_SLASH + actorId;
             throw new MovieCardsServiceException("Error al obtener el actor con ID: " + actorId, url, e);
         }
     }
@@ -204,7 +210,7 @@ public class MovieCardsServiceClient {
     public Actor saveActor(Actor actor) {
         try {
             ResponseEntity<Actor> response = restTemplate.postForEntity(
-                    config.getServiceUrl() + "/actors",
+                    config.getServiceUrl() + API_PATH_ACTORS,
                     actor,
                     Actor.class
             );
@@ -217,7 +223,7 @@ public class MovieCardsServiceClient {
                 }
                 return actor;
             }
-            String url = config.getServiceUrl() + "/actors";
+            String url = config.getServiceUrl() + API_PATH_ACTORS;
             throw new MovieCardsServiceException("Error al guardar el actor", url, e);
         }
     }
@@ -226,7 +232,7 @@ public class MovieCardsServiceClient {
     public String registerActorInMovie(Integer movieId, Integer actorId) {
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    config.getServiceUrl() + "/movies/" + movieId + "/actors/" + actorId,
+                    config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId + API_PATH_ACTORS_WITH_SLASH + actorId,
                     null,
                     String.class
             );
@@ -236,7 +242,7 @@ public class MovieCardsServiceClient {
                 // En modo prueba, retornar éxito
                 return "Éxito";
             }
-            String url = config.getServiceUrl() + "/movies/" + movieId + "/actors/" + actorId;
+            String url = config.getServiceUrl() + API_PATH_MOVIES_WITH_SLASH + movieId + API_PATH_ACTORS_WITH_SLASH + actorId;
             throw new MovieCardsServiceException("Error al registrar el actor en la película", url, e);
         }
     }

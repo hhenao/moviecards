@@ -23,6 +23,11 @@ import java.util.List;
 @Controller
 public class ActorController {
 
+    // Constantes para nombres de atributos y vistas
+    private static final String ATTRIBUTE_ACTOR = "actor";
+    private static final String ATTRIBUTE_TITLE = "title";
+    private static final String VIEW_ACTORS_FORM = "actors/form";
+
     private final ActorService actorService;
 
     public ActorController(ActorService actorService) {
@@ -37,15 +42,16 @@ public class ActorController {
 
     @GetMapping("actors/new")
     public String newActor(Model model) {
-        model.addAttribute("actor", new Actor());
-        model.addAttribute("title", Messages.NEW_ACTOR_TITLE);
-        return "actors/form";
+        model.addAttribute(ATTRIBUTE_ACTOR, new Actor());
+        model.addAttribute(ATTRIBUTE_TITLE, Messages.NEW_ACTOR_TITLE);
+        return VIEW_ACTORS_FORM;
     }
 
     @PostMapping("saveActor")
+    @SuppressWarnings("java:S4684") // Las entidades se usan como DTOs ya que no hay persistencia JPA real
     public String saveActor(@ModelAttribute Actor actor, BindingResult result, Model model) {
         if (result.hasErrors()) {
-            return "actors/form";
+            return VIEW_ACTORS_FORM;
         }
         Actor actorSaved = actorService.save(actor);
         if (actor.getId() != null) {
@@ -54,21 +60,21 @@ public class ActorController {
             model.addAttribute("message", Messages.SAVED_ACTOR_SUCCESS);
         }
 
-        model.addAttribute("actor", actorSaved);
-        model.addAttribute("title", Messages.EDIT_ACTOR_TITLE);
-        return "actors/form";
+        model.addAttribute(ATTRIBUTE_ACTOR, actorSaved);
+        model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
+        return VIEW_ACTORS_FORM;
     }
 
     @GetMapping("editActor/{actorId}")
     public String editActor(@PathVariable Integer actorId, Model model) {
         Actor actor = actorService.getActorById(actorId);
         List<Movie> movies = actor.getMovies();
-        model.addAttribute("actor", actor);
+        model.addAttribute(ATTRIBUTE_ACTOR, actor);
         model.addAttribute("movies", movies);
 
-        model.addAttribute("title", Messages.EDIT_ACTOR_TITLE);
+        model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
 
-        return "actors/form";
+        return VIEW_ACTORS_FORM;
     }
 
 
