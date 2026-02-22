@@ -72,6 +72,8 @@ jobs:
         run: mvn clean package -DskipTests
       - name: Revisar la calidad con Sonarqube
         continue-on-error: true
+        env:
+          SONAR_BRANCH: main
         run: |
           mvn sonar:sonar \
             -Dsonar.host.url=http://localhost:9000 \
@@ -79,21 +81,31 @@ jobs:
             -Dsonar.login=admin \
             -Dsonar.password=admin1234 \
             -Dsonar.projectKey=moviecards \
+            -Dsonar.branch.name=$SONAR_BRANCH \
             -Dsonar.exclusions=**/src/test/** \
             -Dsonar.coverage.exclusions=**/model/**/*.java
       - name: Obtener conteo de issues críticos en SonarQube
         id: sonar-critical
+        env:
+          SONAR_BRANCH: main
         run: |
+          # Incluir la rama para que la API devuelva los issues del análisis correcto
+          API_URL="http://localhost:9000/api/issues/search?componentKeys=moviecards&severities=CRITICAL&ps=1&branch=${SONAR_BRANCH}"
+          RESP=$(curl -s -w "\n%{http_code}" -u admin:admin1234 "$API_URL") || true
+          HTTP_CODE=$(echo "$RESP" | tail -n1)
+          BODY=$(echo "$RESP" | sed '$d')
           TOTAL=999
-          RESP=$(curl -s -u admin:admin1234 "http://localhost:9000/api/issues/search?componentKeys=moviecards&severities=CRITICAL&ps=1") || true
-          if [ -n "$RESP" ]; then
+          if [ "$HTTP_CODE" = "200" ] && [ -n "$BODY" ]; then
             if command -v jq >/dev/null 2>&1; then
-              TOTAL=$(echo "$RESP" | jq -r '.total // 999')
+              TOTAL=$(echo "$BODY" | jq -r '.total // 999')
             else
-              TOTAL=$(echo "$RESP" | grep -o '"total":[0-9]*' | head -1 | sed 's/"total"://')
+              TOTAL=$(echo "$BODY" | grep -o '"total":[0-9]*' | head -1 | sed 's/"total"://')
               TOTAL=${TOTAL:-999}
             fi
+          else
+            echo "SonarQube API: HTTP $HTTP_CODE o respuesta vacía. Comprueba que el análisis se ejecutó y que branch=$SONAR_BRANCH existe."
           fi
+          echo "total_critical=$TOTAL" >> $GITHUB_OUTPUT
           if [ "$TOTAL" -lt 5 ]; then
             echo "deploy_allowed=true" >> $GITHUB_OUTPUT
           else
