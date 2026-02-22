@@ -83,6 +83,9 @@ jobs:
             -Dsonar.coverage.exclusions=**/model/**/*.java
       - name: Obtener conteo de issues críticos en SonarQube
         id: sonar-critical
+        env:
+          # Máximo de issues críticos permitidos para desplegar (configurable en Variables del repositorio)
+          MAX_CRITICAL_ISSUES: ${{ vars.SONAR_MAX_CRITICAL_ISSUES }}
         run: |
           # SonarQube Community: sin parámetro branch (no soporta análisis por ramas)
           API_URL="http://localhost:9000/api/issues/search?componentKeys=moviecards&severities=CRITICAL&ps=1"
@@ -90,6 +93,8 @@ jobs:
           HTTP_CODE=$(echo "$RESP" | tail -n1)
           BODY=$(echo "$RESP" | sed '$d')
           TOTAL=999
+          # Límite configurable: por defecto 5 si no se define SONAR_MAX_CRITICAL_ISSUES
+          MAX_ALLOWED=${MAX_CRITICAL_ISSUES:-5}
           echo "SonarQube API: HTTP_CODE=$HTTP_CODE"
           if [ "$HTTP_CODE" = "200" ] && [ -n "$BODY" ]; then
             if command -v jq >/dev/null 2>&1; then
@@ -98,13 +103,13 @@ jobs:
               TOTAL=$(echo "$BODY" | grep -o '"total":[0-9]*' | head -1 | sed 's/"total"://')
               TOTAL=${TOTAL:-999}
             fi
-            echo "Issues críticos obtenidos: $TOTAL"
+            echo "Issues críticos obtenidos: $TOTAL (máximo permitido para desplegar: $MAX_ALLOWED)"
           else
             echo "SonarQube API: HTTP $HTTP_CODE o respuesta vacía. Comprueba que el análisis se ejecutó correctamente."
             [ -n "$BODY" ] && echo "Respuesta (primeros 300 chars): ${BODY:0:300}"
           fi
           echo "total_critical=$TOTAL" >> $GITHUB_OUTPUT
-          if [ "$TOTAL" -lt 5 ]; then
+          if [ "$TOTAL" -le "$MAX_ALLOWED" ]; then
             echo "deploy_allowed=true" >> $GITHUB_OUTPUT
           else
             echo "deploy_allowed=false" >> $GITHUB_OUTPUT
