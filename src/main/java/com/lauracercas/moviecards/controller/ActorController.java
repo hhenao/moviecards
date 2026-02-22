@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  * Autor: Laura Cercas Ramos
- * Proyecto: TFM Integración Continua con GitHub Actions
+ * Proyecto: TFM Integración Continua con GitHub Actions - Prueba
  * Fecha: 04/06/2024
  */
 @Controller
