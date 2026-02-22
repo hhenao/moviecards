@@ -1,5 +1,6 @@
 package com.lauracercas.moviecards.controller;
 
+import com.lauracercas.moviecards.client.exception.MovieCardsServiceException;
 import com.lauracercas.moviecards.model.Actor;
 import com.lauracercas.moviecards.model.Movie;
 import com.lauracercas.moviecards.service.movie.MovieService;
@@ -41,10 +42,18 @@ public class MovieController {
             throw ex;
         }
         model.addAllAttributes(ex.getModel());
-        model.addAttribute(ATTRIBUTE_TITLE, ex.getTarget() instanceof Movie
-                && ((Movie) ex.getTarget()).getId() != null
+        Object target = ex.getTarget();
+        model.addAttribute(ATTRIBUTE_TITLE, target instanceof Movie && ((Movie) target).getId() != null
                 ? Messages.EDIT_MOVIE_TITLE
                 : Messages.NEW_MOVIE_TITLE);
+        return VIEW_MOVIES_FORM;
+    }
+
+    @ExceptionHandler(MovieCardsServiceException.class)
+    public String handleMovieCardsServiceException(MovieCardsServiceException ex, Model model) {
+        model.addAttribute(ATTRIBUTE_MOVIE, new Movie());
+        model.addAttribute(ATTRIBUTE_TITLE, Messages.NEW_MOVIE_TITLE);
+        model.addAttribute("errorMessage", "Error al guardar la película. Compruebe que el servicio está disponible.");
         return VIEW_MOVIES_FORM;
     }
 
