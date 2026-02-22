@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Cliente REST para comunicarse con el servicio moviecards-service
- * Autor: Laura Cercas Ramos
+ * Autor: Hernan Andres Henao
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 21/02/2026
  */
