@@ -6,8 +6,10 @@ import com.lauracercas.moviecards.service.actor.ActorService;
 import com.lauracercas.moviecards.util.Messages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -44,7 +46,7 @@ public class ActorController {
 
     @InitBinder(ATTRIBUTE_ACTOR)
     public void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(Date.class, "deadDate", new PropertyEditorSupport() {
+        PropertyEditorSupport dateEditor = new PropertyEditorSupport() {
             @Override
             public void setAsText(String text) {
                 if (text == null || text.isBlank()) {
@@ -63,7 +65,22 @@ public class ActorController {
                 Date value = (Date) getValue();
                 return value != null ? new SimpleDateFormat(DATE_PATTERN).format(value) : "";
             }
-        });
+        };
+        binder.registerCustomEditor(Date.class, "deadDate", dateEditor);
+        binder.registerCustomEditor(Date.class, "birthDate", dateEditor);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public String handleBindException(BindException ex, Model model) {
+        if (!ATTRIBUTE_ACTOR.equals(ex.getObjectName())) {
+            throw ex;
+        }
+        model.addAllAttributes(ex.getModel());
+        model.addAttribute(ATTRIBUTE_TITLE, ex.getTarget() instanceof Actor
+                && ((Actor) ex.getTarget()).getId() != null
+                ? Messages.EDIT_ACTOR_TITLE
+                : Messages.NEW_ACTOR_TITLE);
+        return VIEW_ACTORS_FORM;
     }
 
     @GetMapping("actors")
