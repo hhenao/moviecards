@@ -88,7 +88,8 @@ jobs:
           MAX_CRITICAL_ISSUES: ${{ vars.SONAR_MAX_CRITICAL_ISSUES }}
         run: |
           # SonarQube Community: sin parámetro branch (no soporta análisis por ramas)
-          API_URL="http://localhost:9000/api/issues/search?componentKeys=moviecards&severities=CRITICAL&ps=1"
+          # ps=100 para obtener conteo y lista de issues en una sola llamada
+          API_URL="http://localhost:9000/api/issues/search?componentKeys=moviecards&severities=CRITICAL&ps=100"
           RESP=$(curl -s -w "\n%{http_code}" -u admin:admin1234 "$API_URL") || true
           HTTP_CODE=$(echo "$RESP" | tail -n1)
           BODY=$(echo "$RESP" | sed '$d')
@@ -104,6 +105,22 @@ jobs:
               TOTAL=${TOTAL:-999}
             fi
             echo "Issues críticos obtenidos: $TOTAL (máximo permitido para desplegar: $MAX_ALLOWED)"
+            echo ""
+            echo "--- Lista de issues críticos ---"
+            if command -v jq >/dev/null 2>&1; then
+              ISSUES_COUNT=$(echo "$BODY" | jq -r '.issues | length')
+              if [ "$ISSUES_COUNT" -gt 0 ]; then
+                echo "$BODY" | jq -r '.issues[] | "• \(.component | split(":")[1] // .component):\(.line // "?") | \(.message) [\(.rule)]"' || true
+                if [ "$TOTAL" -gt 100 ]; then
+                  echo "... (mostrando los primeros 100 de $TOTAL)"
+                fi
+              else
+                echo "Ninguno."
+              fi
+            else
+              echo "(jq no disponible, no se muestra la lista)"
+            fi
+            echo "--------------------------------"
           else
             echo "SonarQube API: HTTP $HTTP_CODE o respuesta vacía. Comprueba que el análisis se ejecutó correctamente."
             [ -n "$BODY" ] && echo "Respuesta (primeros 300 chars): ${BODY:0:300}"
