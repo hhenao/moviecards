@@ -113,7 +113,8 @@ class ActorControllerTest {
 
         assertEquals("actors/form", viewName);
 
-        verifyNoInteractions(model);
+        verify(model).addAttribute("actor", actor);
+        verify(model).addAttribute("title", Messages.NEW_ACTOR_TITLE);
     }
 
     @Test

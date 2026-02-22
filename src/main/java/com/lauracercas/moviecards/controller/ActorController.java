@@ -71,7 +71,7 @@ public class ActorController {
     }
 
     @ExceptionHandler(BindException.class)
-    public String handleBindException(BindException ex, Model model) {
+    public String handleBindException(BindException ex, Model model) throws BindException {
         if (!ATTRIBUTE_ACTOR.equals(ex.getObjectName())) {
             throw ex;
         }
