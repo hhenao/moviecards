@@ -11,7 +11,7 @@ import java.util.List;
  * Autor: Laura Cercas Ramos
  * Proyecto: TFM Integración Continua con GitHub Actions
  * Fecha: 04/06/2024
- * Modificado: 21/02/2026 - Integración con moviecards-service
+ * Modificado: 21/02/2026 - Integración con moviecards-service - prueba
  */
 @Service
 public class ActorServiceImpl implements ActorService {
