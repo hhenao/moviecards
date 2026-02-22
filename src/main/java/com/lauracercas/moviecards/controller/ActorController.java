@@ -102,13 +102,14 @@ public class ActorController {
         String view = VIEW_ACTORS_FORM;
         if (!result.hasErrors()) {
             Actor actorSaved = actorService.save(actor);
+            Actor actorToShow = (actorSaved != null) ? actorSaved : actor;
             if (actor.getId() != null) {
                 model.addAttribute("message", Messages.UPDATED_ACTOR_SUCCESS);
             } else {
                 model.addAttribute("message", Messages.SAVED_ACTOR_SUCCESS);
             }
-            model.addAttribute(ATTRIBUTE_ACTOR, actorSaved);
-            model.addAttribute("movies", actorSaved.getMovies() != null ? actorSaved.getMovies() : List.of());
+            model.addAttribute(ATTRIBUTE_ACTOR, actorToShow);
+            model.addAttribute("movies", actorToShow.getMovies() != null ? actorToShow.getMovies() : List.of());
             model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
         } else {
             model.addAttribute(ATTRIBUTE_ACTOR, actor);
