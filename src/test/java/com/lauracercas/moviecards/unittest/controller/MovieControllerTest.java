@@ -116,7 +116,8 @@ class MovieControllerTest {
 
         assertEquals("movies/form", viewName);
 
-        verifyNoInteractions(model);
+        verify(model).addAttribute("movie", movie);
+        verify(model).addAttribute("title", Messages.NEW_MOVIE_TITLE);
     }
 
 
