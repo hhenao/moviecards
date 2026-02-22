@@ -79,6 +79,7 @@ jobs:
             -Dsonar.login=admin \
             -Dsonar.password=admin1234 \
             -Dsonar.projectKey=moviecards \
+            -Dsonar.exclusions=**/src/test/** \
             -Dsonar.coverage.exclusions=**/model/**/*.java
       - name: Obtener conteo de issues críticos en SonarQube
         id: sonar-critical
