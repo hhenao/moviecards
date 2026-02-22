@@ -6,7 +6,9 @@ import com.lauracercas.moviecards.service.movie.MovieService;
 import com.lauracercas.moviecards.util.Messages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,10 +25,27 @@ import java.util.List;
 @Controller
 public class MovieController {
 
+    private static final String ATTRIBUTE_MOVIE = "movie";
+    private static final String ATTRIBUTE_TITLE = "title";
+    private static final String VIEW_MOVIES_FORM = "movies/form";
+
     private final MovieService movieService;
 
     public MovieController(MovieService movieService) {
         this.movieService = movieService;
+    }
+
+    @ExceptionHandler(BindException.class)
+    public String handleBindException(BindException ex, Model model) throws BindException {
+        if (!ATTRIBUTE_MOVIE.equals(ex.getObjectName())) {
+            throw ex;
+        }
+        model.addAllAttributes(ex.getModel());
+        model.addAttribute(ATTRIBUTE_TITLE, ex.getTarget() instanceof Movie
+                && ((Movie) ex.getTarget()).getId() != null
+                ? Messages.EDIT_MOVIE_TITLE
+                : Messages.NEW_MOVIE_TITLE);
+        return VIEW_MOVIES_FORM;
     }
 
     @GetMapping("movies")
@@ -37,41 +56,41 @@ public class MovieController {
 
     @GetMapping("movies/new")
     public String newMovie(Model model) {
-        model.addAttribute("movie", new Movie());
-        model.addAttribute("title", Messages.NEW_MOVIE_TITLE);
-        return "movies/form";
+        model.addAttribute(ATTRIBUTE_MOVIE, new Movie());
+        model.addAttribute(ATTRIBUTE_TITLE, Messages.NEW_MOVIE_TITLE);
+        return VIEW_MOVIES_FORM;
     }
 
     @PostMapping("saveMovie")
-    public String saveMovie(@ModelAttribute("movie") Movie movie, BindingResult result, Model model) {
-        if (result.hasErrors()) {
-            model.addAttribute("movie", movie);
-            model.addAttribute("title", movie.getId() != null ? Messages.EDIT_MOVIE_TITLE : Messages.NEW_MOVIE_TITLE);
-            return "movies/form";
-        }
-        Movie movieSaved = movieService.save(movie);
-        Movie movieToShow = (movieSaved != null) ? movieSaved : movie;
-        if (movie.getId() != null) {
-            model.addAttribute("message", Messages.UPDATED_MOVIE_SUCCESS);
+    @SuppressWarnings("java:S4684") // Las entidades se usan como DTOs ya que no hay persistencia JPA real
+    public String saveMovie(@ModelAttribute(ATTRIBUTE_MOVIE) Movie movie, BindingResult result, Model model) {
+        String view = VIEW_MOVIES_FORM;
+        if (!result.hasErrors()) {
+            Movie movieSaved = movieService.save(movie);
+            Movie movieToShow = (movieSaved != null) ? movieSaved : movie;
+            if (movie.getId() != null) {
+                model.addAttribute("message", Messages.UPDATED_MOVIE_SUCCESS);
+            } else {
+                model.addAttribute("message", Messages.SAVED_MOVIE_SUCCESS);
+            }
+            model.addAttribute(ATTRIBUTE_MOVIE, movieToShow);
+            model.addAttribute("actors", movieToShow.getActors() != null ? movieToShow.getActors() : List.of());
+            model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_MOVIE_TITLE);
         } else {
-            model.addAttribute("message", Messages.SAVED_MOVIE_SUCCESS);
+            model.addAttribute(ATTRIBUTE_MOVIE, movie);
+            model.addAttribute(ATTRIBUTE_TITLE, movie.getId() != null ? Messages.EDIT_MOVIE_TITLE : Messages.NEW_MOVIE_TITLE);
         }
-        model.addAttribute("movie", movieToShow);
-        model.addAttribute("actors", movieToShow.getActors() != null ? movieToShow.getActors() : List.of());
-        model.addAttribute("title", Messages.EDIT_MOVIE_TITLE);
-        return "movies/form";
+        return view;
     }
 
     @GetMapping("editMovie/{movieId}")
     public String editMovie(@PathVariable Integer movieId, Model model) {
         Movie movie = movieService.getMovieById(movieId);
         List<Actor> actors = movie.getActors();
-        model.addAttribute("movie", movie);
+        model.addAttribute(ATTRIBUTE_MOVIE, movie);
         model.addAttribute("actors", actors);
-
-        model.addAttribute("title", Messages.EDIT_MOVIE_TITLE);
-
-        return "movies/form";
+        model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_MOVIE_TITLE);
+        return VIEW_MOVIES_FORM;
     }
 
 
