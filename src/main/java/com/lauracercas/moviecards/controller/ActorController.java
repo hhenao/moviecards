@@ -108,6 +108,7 @@ public class ActorController {
                 model.addAttribute("message", Messages.SAVED_ACTOR_SUCCESS);
             }
             model.addAttribute(ATTRIBUTE_ACTOR, actorSaved);
+            model.addAttribute("movies", actorSaved.getMovies() != null ? actorSaved.getMovies() : List.of());
             model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
         } else {
             model.addAttribute(ATTRIBUTE_ACTOR, actor);
