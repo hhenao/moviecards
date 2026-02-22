@@ -29,7 +29,7 @@
             enctype="multipart/form-data"
     >
         <div
-                th:if="${#fields.hasErrors('*')}"
+                th:if="${actor != null and #fields.hasErrors('*')}"
                 class="alert alert-danger"
                 role="alert"
         >
@@ -70,7 +70,6 @@
                     th:field="*{deadDate}"
                     id="deadDate"
                     name="deadDate"
-                    placeholder="Dejar vacío si el actor sigue vivo"
             />
         </div>
         <div class="mb-3">

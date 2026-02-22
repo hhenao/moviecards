@@ -7,11 +7,17 @@ import com.lauracercas.moviecards.util.Messages;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.beans.PropertyEditorSupport;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 
@@ -30,8 +36,34 @@ public class ActorController {
 
     private final ActorService actorService;
 
+    private static final String DATE_PATTERN = "yyyy-MM-dd";
+
     public ActorController(ActorService actorService) {
         this.actorService = actorService;
+    }
+
+    @InitBinder(ATTRIBUTE_ACTOR)
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(Date.class, "deadDate", new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) {
+                if (text == null || text.isBlank()) {
+                    setValue(null);
+                    return;
+                }
+                try {
+                    setValue(new SimpleDateFormat(DATE_PATTERN).parse(text.trim()));
+                } catch (ParseException e) {
+                    setValue(null);
+                }
+            }
+
+            @Override
+            public String getAsText() {
+                Date value = (Date) getValue();
+                return value != null ? new SimpleDateFormat(DATE_PATTERN).format(value) : "";
+            }
+        });
     }
 
     @GetMapping("actors")
@@ -49,7 +81,7 @@ public class ActorController {
 
     @PostMapping("saveActor")
     @SuppressWarnings("java:S4684") // Las entidades se usan como DTOs ya que no hay persistencia JPA real
-    public String saveActor(@ModelAttribute Actor actor, BindingResult result, Model model) {
+    public String saveActor(@ModelAttribute(ATTRIBUTE_ACTOR) Actor actor, BindingResult result, Model model) {
         String view = VIEW_ACTORS_FORM;
         if (!result.hasErrors()) {
             Actor actorSaved = actorService.save(actor);
@@ -60,6 +92,9 @@ public class ActorController {
             }
             model.addAttribute(ATTRIBUTE_ACTOR, actorSaved);
             model.addAttribute(ATTRIBUTE_TITLE, Messages.EDIT_ACTOR_TITLE);
+        } else {
+            model.addAttribute(ATTRIBUTE_ACTOR, actor);
+            model.addAttribute(ATTRIBUTE_TITLE, actor.getId() != null ? Messages.EDIT_ACTOR_TITLE : Messages.NEW_ACTOR_TITLE);
         }
         return view;
     }
