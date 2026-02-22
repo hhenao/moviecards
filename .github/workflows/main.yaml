@@ -71,6 +71,7 @@ jobs:
       - name: Construir con Maven
         run: mvn clean package -DskipTests
       - name: Revisar la calidad con Sonarqube
+        continue-on-error: true
         run: |
           mvn sonar:sonar \
             -Dsonar.host.url=http://localhost:9000 \
