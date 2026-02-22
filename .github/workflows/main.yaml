@@ -58,6 +58,8 @@ jobs:
     needs: test
     runs-on: self-hosted
     continue-on-error: true
+    outputs:
+      deploy_allowed: ${{ steps.sonar-critical.outputs.deploy_allowed }}
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v2
@@ -77,11 +79,30 @@ jobs:
             -Dsonar.password=admin1234 \
             -Dsonar.projectKey=moviecards \
             -Dsonar.coverage.exclusions=**/model/**/*.java
+      - name: Obtener conteo de issues críticos en SonarQube
+        id: sonar-critical
+        run: |
+          TOTAL=999
+          RESP=$(curl -s -u admin:admin1234 "http://localhost:9000/api/issues/search?componentKeys=moviecards&severities=CRITICAL&ps=1") || true
+          if [ -n "$RESP" ]; then
+            if command -v jq >/dev/null 2>&1; then
+              TOTAL=$(echo "$RESP" | jq -r '.total // 999')
+            else
+              TOTAL=$(echo "$RESP" | grep -o '"total":[0-9]*' | head -1 | sed 's/"total"://')
+              TOTAL=${TOTAL:-999}
+            fi
+          fi
+          if [ "$TOTAL" -lt 5 ]; then
+            echo "deploy_allowed=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_allowed=false" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
 
   stage:
     runs-on: ubuntu-latest
     needs: qa
-    if: github.ref=='refs/heads/master'
+    if: github.ref=='refs/heads/master' && needs.qa.outputs.deploy_allowed == 'true'
     environment:
       name: 'Staging'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
@@ -103,8 +124,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: stage
-    if: github.ref=='refs/heads/master'
+    needs: [stage, qa]
+    if: github.ref=='refs/heads/master' && needs.qa.outputs.deploy_allowed == 'true'
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
