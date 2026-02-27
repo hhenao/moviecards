@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * Autor: Laura Cercas Ramos
- * Proyecto: TFM Integración Continua con GitHub Actions
+ * Proyecto: TFM Integración Continua con GitHub Actions - Prueba
  * Fecha: 04/06/2024
  */
 @Entity
